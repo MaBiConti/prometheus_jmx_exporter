@@ -64,6 +64,12 @@ public class JmxCollector implements MultiCollector {
 
     private final Mode mode;
 
+    static class ExtraMetric {
+        String name;
+        Object value;
+        String description;
+    }
+
     static class Rule {
         Pattern pattern;
         String name;
@@ -80,6 +86,7 @@ public class JmxCollector implements MultiCollector {
     public static class MetricCustomizer {
         MBeanFilter mbeanFilter;
         List<String> attributesAsLabels;
+        List<ExtraMetric> extraMetrics;
     }
 
     public static class MBeanFilter {
@@ -351,9 +358,23 @@ public class JmxCollector implements MultiCollector {
                 if (attributesAsLabels == null) {
                     attributesAsLabels = new ArrayList<>();
                 }
+                List<Map<String, Object>> extraMetricsYaml =
+                        (List<Map<String, Object>>) metricCustomizerYaml.get("extraMetrics");
+                if (extraMetricsYaml == null) {
+                    extraMetricsYaml = new ArrayList<>();
+                }
+                List<ExtraMetric> extraMetrics = new ArrayList<>();
+                for (Map<String, Object> extraMetricYaml : extraMetricsYaml) {
+                    ExtraMetric extraMetric = new ExtraMetric();
+                    extraMetric.name = (String) extraMetricYaml.get("name");
+                    extraMetric.value = extraMetricYaml.get("value");
+                    extraMetric.description = (String) extraMetricYaml.get("description");
+                    extraMetrics.add(extraMetric);
+                }
 
                 MetricCustomizer metricCustomizer = new MetricCustomizer();
                 metricCustomizer.mbeanFilter = mbeanFilter;
+                metricCustomizer.extraMetrics = extraMetrics;
                 metricCustomizer.attributesAsLabels = attributesAsLabels;
                 cfg.metricCustomizers.add(metricCustomizer);
             }

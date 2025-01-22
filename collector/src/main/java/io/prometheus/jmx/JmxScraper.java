@@ -22,6 +22,7 @@ import io.prometheus.jmx.logger.Logger;
 import io.prometheus.jmx.logger.LoggerFactory;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -263,6 +264,18 @@ class JmxScraper {
         if (metricCustomizer != null) {
             attributesAsLabelsWithValues =
                     getAttributesAsLabelsWithValues(metricCustomizer, attributes);
+            for (JmxCollector.ExtraMetric extraMetric : getExtraMetrics(metricCustomizer)) {
+                processBeanValue(
+                        mBeanName,
+                        mBeanDomain,
+                        jmxMBeanPropertyCache.getKeyPropertyList(mBeanName),
+                        attributesAsLabelsWithValues,
+                        new LinkedList<>(),
+                        extraMetric.name,
+                        "UNKNOWN",
+                        extraMetric.description,
+                        extraMetric.value);
+            }
         }
 
         for (Object object : attributes) {
@@ -310,6 +323,13 @@ class JmxScraper {
                         object.getClass().getName());
             }
         }
+    }
+
+    private List<JmxCollector.ExtraMetric> getExtraMetrics(
+            JmxCollector.MetricCustomizer metricCustomizer) {
+        return metricCustomizer.extraMetrics != null
+                ? metricCustomizer.extraMetrics
+                : new ArrayList<>();
     }
 
     private Map<String, String> getAttributesAsLabelsWithValues(JmxCollector.MetricCustomizer metricCustomizer, AttributeList attributes) {
